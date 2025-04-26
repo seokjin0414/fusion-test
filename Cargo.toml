@@ -27,3 +27,4 @@ tower = "0.5.2"
 
 datafusion = "47.0.0"
 iceberg-rust = "0.7.0"
+livy = "0.5.0"
