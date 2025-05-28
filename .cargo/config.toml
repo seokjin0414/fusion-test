@@ -1,0 +1,5 @@
+[build]
+rustflags = ["-Ctarget-cpu=native"]
+
+[target.'cfg(all(unix, target_os = "macos"))']
+rustflags = ["-Ctarget-cpu=apple-m2"]

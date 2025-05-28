@@ -16,10 +16,10 @@ panic = "unwind"
 serde = "1.0.219"
 serde_json = "1.0.140"
 serde_derive = "1.0.219"
-chrono = { version = "0.4.40", features = ["serde"] }
+chrono = { version = "0.4.41", features = ["serde"] }
 chrono-tz = "0.10.3"
 
-tokio = { version = "1.44.2", default-features = false, features = [
+tokio = { version = "1.45.1", default-features = false, features = [
     "macros",
     "rt-multi-thread",
 ] } #is the async framework that is the runtime for axum
@@ -28,3 +28,4 @@ tower = "0.5.2"
 datafusion = "47.0.0"
 iceberg-rust = "0.7.0"
 livy = "0.5.0"
+parquet2 = "0.17.2"
