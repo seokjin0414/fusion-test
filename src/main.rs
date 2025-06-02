@@ -70,7 +70,7 @@ fn data_set_to_record_batch(data: &[DataSet]) -> Result<RecordBatch> {
             Arc::new(recorded_array),
         ],
     ).map_err(|e| anyhow!("fail to create record batch: {:?}", e))?;
-    
+
     Ok(batch)
 }
 
@@ -80,14 +80,14 @@ async fn record_batch_to_dataframe(
 ) -> Result<DataFrame> {
     let schema = batch.schema();
     let table = MemTable::try_new(schema, vec![vec![batch]])?;
-    
+
     ctx.register_table("tmp_mem_table", Arc::new(table))
         .map_err(|e| anyhow!("fail to register table: {:?}", e))?;
-    
+
     let df = ctx.table("tmp_mem_table")
         .await
         .map_err(|e| anyhow!("fail to get table: {:?}", e))?;
- 
+
     Ok(df)
 }
 
@@ -106,7 +106,7 @@ async fn init_table() -> Result<Tabular> {
     // Catalog
     let catalog_arn = var("S3_TABLES_CATALOG_ARN")
         .map_err(|e| anyhow!("fail to get S3_TABLES_CATALOG_ARN: {:?}", e))?;
-    
+
     let catalog = S3TablesCatalog::new(&sdk_config, &catalog_arn, ObjectStoreBuilder::s3())?;
     let arc_catalog: Arc<dyn Catalog> = Arc::new(catalog);
 
@@ -126,16 +126,16 @@ async fn init_table() -> Result<Tabular> {
 async fn main() -> Result<()> {
     let table = init_table().await?;
     let df_table = Arc::new(DataFusionTable::from(table));
-    
+
     let test_data_set = DataSet::test_set()?;
-    
+
     let batch = data_set_to_record_batch(&test_data_set)?;
 
     let ctx = SessionContext::new();
     let df = record_batch_to_dataframe(batch, &ctx).await?;
 
-    
+
     // df.write_table("test", DataFrameWriteOptions::default()).await?;
-    
+
     Ok(())
 }
