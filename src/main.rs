@@ -115,27 +115,28 @@ async fn init_table() -> Result<Tabular> {
         .map_err(|e| anyhow!("fail to get NAMESPACE: {:?}", e))?;
     let test_table = var("TEST_TABLE")
         .map_err(|e| anyhow!("fail to get TEST_TABLE: {:?}", e))?;
-    let table_identifier=  Identifier::new(&[namespace], &test_table);
-    let table = arc_catalog.load_tabular(&table_identifier).await?;
+    let identifier=  Identifier::new(&[namespace], &test_table);
+    let tabular = arc_catalog.load_tabular(&identifier).await?;
     
-    Ok(table)
+    Ok(tabular)
 }
 
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let table = init_table().await?;
-    let df_table = Arc::new(DataFusionTable::from(table));
+    let tabular = init_table().await?;
+    let df_table = Arc::new(DataFusionTable::from(tabular));
 
     let test_data_set = DataSet::test_set()?;
-
     let batch = data_set_to_record_batch(&test_data_set)?;
 
     let ctx = SessionContext::new();
+    ctx.register_table("test", df_table.clone())?;
+    
     let df = record_batch_to_dataframe(batch, &ctx).await?;
-
-
-    // df.write_table("test", DataFrameWriteOptions::default()).await?;
+    
+    df.write_table("test", DataFrameWriteOptions::default()).await
+        .map_err(|e| anyhow!("fail to write table: {:?}", e))?;
 
     Ok(())
 }

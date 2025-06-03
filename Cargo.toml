@@ -26,7 +26,7 @@ tokio = { version = "1.45.1", default-features = false, features = [
     "rt-multi-thread",
 ] } #is the async framework that is the runtime for axum
 
-datafusion = "47.0.0"
+datafusion = "45.0.0"
 datafusion_iceberg = "0.7.0"
 iceberg-rust = "0.7.0"
 iceberg-s3tables-catalog = "0.7.0"
