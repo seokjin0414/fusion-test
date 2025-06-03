@@ -14,7 +14,7 @@ use datafusion::prelude::SessionContext;
 use datafusion_iceberg::DataFusionTable;
 use dotenvy::var;
 // use aws_sdk_s3tables;
-use iceberg_rust::catalog::Catalog;
+use iceberg_rust::catalog::{tabular, Catalog};
 use iceberg_rust::catalog::tabular::Tabular;
 use iceberg_rust::object_store::ObjectStoreBuilder;
 use iceberg_rust::spec::identifier::Identifier;
@@ -49,7 +49,7 @@ fn data_set_to_record_batch(data: &[DataSet]) -> Result<RecordBatch> {
     let schema = Arc::new(Schema::new(vec![
         Field::new("measurement_point_id", DataType::Utf8, false),
         Field::new("value", DataType::Float64, true),
-        Field::new("recorded_at", DataType::Timestamp(TimeUnit::Nanosecond, None), false),
+        // Field::new("recorded_at", DataType::Timestamp(TimeUnit::Nanosecond, None), false),
     ]));
 
     let id_array = StringArray::from_iter(
@@ -67,10 +67,9 @@ fn data_set_to_record_batch(data: &[DataSet]) -> Result<RecordBatch> {
         vec![
             Arc::new(id_array),
             Arc::new(value_array),
-            Arc::new(recorded_array),
+            // Arc::new(recorded_array),
         ],
     ).map_err(|e| anyhow!("fail to create record batch: {:?}", e))?;
-
     Ok(batch)
 }
 
@@ -117,7 +116,7 @@ async fn init_table() -> Result<Tabular> {
         .map_err(|e| anyhow!("fail to get TEST_TABLE: {:?}", e))?;
     let identifier=  Identifier::new(&[namespace], &test_table);
     let tabular = arc_catalog.load_tabular(&identifier).await?;
-    
+
     Ok(tabular)
 }
 
@@ -129,14 +128,17 @@ async fn main() -> Result<()> {
 
     let test_data_set = DataSet::test_set()?;
     let batch = data_set_to_record_batch(&test_data_set)?;
-
-    let ctx = SessionContext::new();
-    ctx.register_table("test", df_table.clone())?;
     
+    let ctx = SessionContext::new();
+    ctx.register_table("test", df_table)?;
+
     let df = record_batch_to_dataframe(batch, &ctx).await?;
+    println!("#### 3");
+    
     
     df.write_table("test", DataFrameWriteOptions::default()).await
         .map_err(|e| anyhow!("fail to write table: {:?}", e))?;
+    println!("#### 4");
 
     Ok(())
 }
