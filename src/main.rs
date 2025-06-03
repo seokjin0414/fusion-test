@@ -133,8 +133,6 @@ async fn main() -> Result<()> {
     ctx.register_table("test", df_table)?;
 
     let df = record_batch_to_dataframe(batch, &ctx).await?;
-    println!("#### 3");
-    
     
     df.write_table("test", DataFrameWriteOptions::default()).await
         .map_err(|e| anyhow!("fail to write table: {:?}", e))?;
