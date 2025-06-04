@@ -6,7 +6,7 @@ use aws_config::{
     SdkConfig
 };
 use chrono::{DateTime, Utc};
-use datafusion::arrow::array::{Float64Array, RecordBatch, StringArray, TimestampNanosecondArray};
+use datafusion::arrow::array::{Array, Float64Array, RecordBatch, StringArray, TimestampNanosecondArray};
 use datafusion::arrow::datatypes::{DataType, Field, Schema, TimeUnit};
 use datafusion::dataframe::{DataFrame, DataFrameWriteOptions};
 use datafusion::datasource::MemTable;
@@ -14,8 +14,10 @@ use datafusion::prelude::SessionContext;
 use datafusion_iceberg::DataFusionTable;
 use dotenvy::var;
 // use aws_sdk_s3tables;
-use iceberg_rust::catalog::{tabular, Catalog};
-use iceberg_rust::catalog::tabular::Tabular;
+use iceberg_rust::catalog::{
+    tabular::Tabular,
+    Catalog,
+};
 use iceberg_rust::object_store::ObjectStoreBuilder;
 use iceberg_rust::spec::identifier::Identifier;
 use iceberg_s3tables_catalog::S3TablesCatalog;
@@ -61,7 +63,7 @@ fn data_set_to_record_batch(data: &[DataSet]) -> Result<RecordBatch> {
     let recorded_array = TimestampNanosecondArray::from_iter(
         data.iter().map(|d| d.recorded_at.timestamp_nanos_opt())
     );
-
+    
     let batch = RecordBatch::try_new(
         schema,
         vec![
@@ -70,6 +72,7 @@ fn data_set_to_record_batch(data: &[DataSet]) -> Result<RecordBatch> {
             // Arc::new(recorded_array),
         ],
     ).map_err(|e| anyhow!("fail to create record batch: {:?}", e))?;
+
     Ok(batch)
 }
 
@@ -123,20 +126,22 @@ async fn init_table() -> Result<Tabular> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let tabular = init_table().await?;
-    let df_table = Arc::new(DataFusionTable::from(tabular));
 
     let test_data_set = DataSet::test_set()?;
     let batch = data_set_to_record_batch(&test_data_set)?;
     
     let ctx = SessionContext::new();
+    let tabular = init_table().await?;
+    let df_table = Arc::new(DataFusionTable::from(tabular));
     ctx.register_table("test", df_table)?;
 
     let df = record_batch_to_dataframe(batch, &ctx).await?;
     
-    df.write_table("test", DataFrameWriteOptions::default()).await
+    println!("#UTC-1: {:?}", Utc::now());
+    let commit_result = df.write_table("test", DataFrameWriteOptions::default()).await
         .map_err(|e| anyhow!("fail to write table: {:?}", e))?;
-    println!("#### 4");
-
+    println!("#UTC-2: {:?}", Utc::now());
+    println!("#result: {:?}", commit_result);
+    
     Ok(())
 }
